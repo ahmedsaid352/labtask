@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="utf-8" />
+        <title>JavaScript</title>
+        <style>
+            body{
+                background-color: rgb(0, 0, 0);
+                margin: 0;
+                padding: 0;
+            }
+            p,input{
+                display: inline;
+            }
+            p{
+                font-size: 25px;
+                font-family: tahoma;
+            }
+            .container{
+                margin: 20px auto;
+                text-align: center;
+                color: #fff;
+            }
+            #value{
+                margin: 50px auto;
+                font-size: 25px;
+                font-family: tahoma;
+                color: #fff;
+                display: none;
+            }
+            #in{
+                margin-top: 150px;
+            }
+            #range{
+                /* -webkit-appearance:media-play-button ; */
+                -webkit-appearance: none;
+                width: 80%;
+                height: 7px;
+                border-radius: 3px;
+                background: #d3d3d3;
+                outline: none;
+            }
+            #range::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                position: relative;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background-color: #304701;
+                cursor: pointer;
+                z-index: 3;
+            }
+            #led{
+                width: 100px;
+                height: 100px;
+                text-align: center;
+                margin: 50px auto;
+                background-color: rgba(171, 255, 0,0.6);
+                border-radius: 50%;
+                box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset #304701 0 -1px 9px, #89FF00 0 2px 12px;
+            }
+            #selector{
+                height: 104px;
+                width: 48px;
+                position: absolute;
+                left: 50%;
+                background: url("led.png");
+                transform: translateX(-50%);
+                z-index: 2;
+            }
+            #selectBtn{
+                height: 48px;
+                width: 48px;
+                background: url("led.png");
+                background-size: cover;
+                background-position: center;
+                border-radius: 50%;
+                bottom: 85px;
+                position: absolute;
+                cursor: pointer;
+            }
+            #selectValue{
+                width: 48px;
+                height: 40px;
+                position: absolute;
+                top: -90px;
+                background: #bfdf9a;
+                text-align: center;
+                border-radius: 4px;
+                line-height: 45px;
+                font-size: 20px;
+                font-family: tahoma;
+                color: #000;
+            }
+            #selectValue::after{
+                content: "";
+                border-top: 17px solid #bfdf9a;
+                border-left: 24px solid #000;
+                border-right: 24px solid #000;
+                position: absolute;
+                bottom: -14px;
+                left: 0;
+            }
+            button{
+                top:90%;
+                margin-top: 140px;
+                width: 100px;
+                height: 30px;
+                border-radius:10px;
+                background-color: #304701;
+                color: #fff;
+
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div id="in">
+                <p>0</p>
+                <input id="range" type="range" min="0" max="255" value="128" >
+                <p>255</p>
+                <div id="selector">
+                    <div id="selectBtn"></div>
+                    <div id="selectValue"></div>
+                </div>
+            </div>
+            <div id="value" ></div>
+            <div id="led"></div>
+            <button onclick="changeStyle();">Change Style</button>
+        </div>
+        <script>
+            document.getElementById("value").textContent= "Value : " +document.getElementById("range")["value"];
+            var HOST = location.origin.replace(/^http/, 'ws');
+            var ws = new WebSocket(HOST);
+            var selector = document.getElementById("selector");
+            var selectBtn = document.getElementById("selectBtn");
+            var selectValue = document.getElementById("selectValue");
+            var bodyWidth = document.body.clientWidth;
+            var range = document.getElementById("range");
+            selectValue.innerHTML = range.value;
+            var valDiv = document.getElementById("value");
+            function changeStyle(){
+                if(valDiv.style.display == "none"){
+                    valDiv.style.display= "block";
+                    selectValue.style.display= "none";
+                }else{
+                    valDiv.style.display= "none";
+                    selectValue.style.display= "block";
+                }
+            }
+            range.onchange =  function () {
+                document.getElementById("value").textContent= "Value : " +document.getElementById("range")["value"];
+                var rangeVa = this.value;
+                selectValue.innerHTML = range.value;
+
+                // this what the client send
+                
+                ws.send(rangeVa);
+                
+                var negativeWid = 2400/bodyWidth;
+                var left = (Number(this.value)*80/255) + 10 - negativeWid;
+                selector.style.left=left +"%";
+            }
+            ws.onmessage = function(event){
+                console.log(event);
+                var msg = event.data;
+                document.getElementById("range")["value"]= msg;
+                document.getElementById("value").textContent= "Value : " +document.getElementById("range")["value"];
+                var opacity = Number(msg)*(4/1275)+0.2;
+                var negativeWid = 2400/bodyWidth;
+                var left = (Number(range.value)*80/255) + 10 - negativeWid;
+                selector.style.left=left +"%";
+                document.getElementById("led").style.backgroundColor="rgba(171, 255, 0,"+ opacity +")";
+                selectValue.innerHTML = range.value;
+            }
+            ws.onopen = function(){
+                console.log("Connected to server");
+            }
+            ws.onclose = function(){
+                console.log("Disconnected from server!");
+            }
+        </script>
+    </body> 
+</html>
